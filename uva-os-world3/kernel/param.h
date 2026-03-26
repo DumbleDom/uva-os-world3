@@ -52,7 +52,7 @@
 // #define MAX_TASK_KER_PAGES      16       //max kernel pages per task. 
 
 // keep them here b/c needed by lots of files. moved from mmu.h. 
-#define VA_START 			0xffff000000080000
+#define VA_START 			0xffff000000000000
 #define VA2PA(x) ((unsigned long)x - VA_START)          // kernel va to pa
 #define PA2VA(x) ((void *)((unsigned long)x + VA_START))  // pa to kernel va
 
