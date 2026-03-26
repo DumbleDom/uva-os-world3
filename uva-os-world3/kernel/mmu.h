@@ -127,7 +127,7 @@ https://github.com/codingbelief/arm-architecture-reference-manual-for-armv8-a/bl
 #define MT_NORMAL_WT_FLAGS  		0xbb
 #define MT_NORMAL_FLAGS  		    0xff
 
-#define MAIR_VALUE 0 /* TODO: replace this */
+#define MAIR_VALUE 0xff00
 
 #define MMU_FLAGS	 		(MM_TYPE_BLOCK | (MT_NORMAL << 2) | MM_ACCESS)	    /* block (eg section) granuarlity, memory */
 #define MMU_DEVICE_FLAGS	(MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | MM_ACCESS)	/* block (eg section) granuarlity, devices */
