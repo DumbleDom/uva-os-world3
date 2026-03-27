@@ -718,7 +718,7 @@ void create_kern_pgtables(void) {
 
 	// allocate PUD & PMD1; link PGD (pg_dir)->PUD, and PUD->PMD1
 	create_table_entry(pgd, VA_START, PGD_SHIFT, 1); 
-	create_table_entry(pud, VA_START, PUD_SHIFT, 2);
+	create_table_entry(pud, VA_START, PUD_SHIFT, 1);
 
 
 	// 1. kernel mem (PMD1). Phys addr range: 0--DEVICE_BASE (0x3f000000)

@@ -96,9 +96,7 @@ el1_entry:
 setup_sp: 	
 	// Set virt sp = 4096 + boot_stacks
 	// (assuming linear mapping, phys 0 --> virt VA_START)	
-	ldr x0, =VA_START
-	ldr x1, =boot_stacks
-	add x0, x0, x1
+	ldr x0, =boot_stacks
 	add x0, x0, #4096
 	mov sp, x0
 	// NB: we aren't using sp yet -- until mmu is on
