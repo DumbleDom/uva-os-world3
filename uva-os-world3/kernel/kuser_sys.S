@@ -43,7 +43,8 @@
           
 .globl call_sys_write
     call_sys_write:
-    /* TODO: your code here */
+    mov x8, #SYS_write
+    svc #0
     ret          
           
 
