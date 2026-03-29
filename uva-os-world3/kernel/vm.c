@@ -230,6 +230,7 @@ int dup_current_virt_memory(struct mm_struct *dstmm) {
 	struct mm_struct* srcmm = myproc()->mm; BUG_ON(!srcmm); 
 
 	acquire(&srcmm->lock); 
+  printf("DEBUG sp=0x%lx USER_VA_END=0x%lx\n", regs->sp, (unsigned long)USER_VA_END);
 
 	V("pid %d src>mm %lx p->mm->sz %lu", myproc()->pid, (unsigned long)srcmm, srcmm->sz);
 
@@ -249,24 +250,27 @@ int dup_current_virt_memory(struct mm_struct *dstmm) {
 		unsigned long perm = PTE_TO_PERM(*pte); 
 		// NB: "i" is a userva in the src address space. this assumes the src's userva is active
 		V("dup user page at userva %lx", i);  
-		void *kernel_va = allocate_user_page_mm(0, 0, 0); /* TODO: replace this */
+		void *kernel_va = allocate_user_page_mm(dstmm, i, perm); /* TODO: replace this */
 		if(kernel_va == 0)
 			goto no_mem;  
 		// copy the page content from the src to the dst. be careful with the memmove() arg order
-		memmove(0, 0, 0); /* TODO: replace this */
+    unsigned long src_pa = PTE_TO_PA(*pte);
+memmove(kernel_va, PA2VA(src_pa), PAGE_SIZE);
 	}
 
 	// copy user stack from src to dst. 
 	V("regs->sp %lx", regs->sp);
-	for (unsigned long i = PGROUNDDOWN(regs->sp); i < USER_VA_END; i+=PAGE_SIZE) {
+for (unsigned long i = PGROUNDDOWN(regs->sp); i < PGROUNDUP(regs->sp + PAGE_SIZE); i += PAGE_SIZE) {
 		unsigned long *pte = map_page(srcmm, i, 0/*just locate*/, 0/*no alloc*/, 0); 
-		BUG_ON(!pte);  // bad user mapping (stack)?
-		void *kernel_va = allocate_user_page_mm(0, 0, 0); /* TODO: replace this */
+ if (!pte) continue; // bad user mapping (stack)?
+    unsigned long perm = PTE_TO_PERM(*pte);
+		void *kernel_va = allocate_user_page_mm(dstmm, i, perm); /* TODO: replace this */
 		if(kernel_va == 0)
 			goto no_mem; 
 		// NB: "i" is a userva in the src address space. this assumes the src's userva is active
 		V("kern va %lx i %x", kernel_va, i);
-		memmove(0, 0, 0); /* TODO: replace this */
+		unsigned long src_pa = PTE_TO_PA(*pte);
+memmove(kernel_va, PA2VA(src_pa), PAGE_SIZE); /* TODO: replace this */
 	}
 
 	dstmm->sz = srcmm->sz; dstmm->codesz = srcmm->codesz;
@@ -547,13 +551,13 @@ unsigned long growproc (struct mm_struct *mm, int incr) {
 	int ret; 
 	
 	// careful: sz is unsigned; incr is signed
-	if (1) { /* TODO: replace this */
+	if (incr < 0 && sz + (unsigned long)incr > sz) { /* TODO: replace this */
 		W("incr too small"); 
 		W("sz 0x%lx %ld (dec) incr %d (dec). requested new brk 0x%lx", 
 			sz, sz, incr, sz+incr); 
 		goto bad; 
 	}
-	if (1) { /* TODO: replace this */
+	if (incr > 0 && sz + incr > USER_VA_END) { /* TODO: replace this */
 		W("incr too large"); 
 		W("sz 0x%lx %ld (dec) incr %d (dec). requested new brk 0x%lx", 
 		sz, sz, incr, sz+incr); 
@@ -561,7 +565,7 @@ unsigned long growproc (struct mm_struct *mm, int incr) {
 	}
 
 	if (incr >= 0) {		// brk grows
-		for (; ; ) { /* TODO: replace this */
+		for (sz1 = PGROUNDUP(sz); sz1 < PGROUNDUP(sz + incr); sz1 += PAGE_SIZE) { /* TODO: replace this */
 			kva = allocate_user_page_mm(mm, sz1, MM_AP_RW | MM_XN); 
 			if (!kva) {
 				W("allocate_user_page_mm failed");

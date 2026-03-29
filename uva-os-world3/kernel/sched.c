@@ -770,13 +770,14 @@ int move_to_user_mode_donut(unsigned long start, unsigned long size, unsigned lo
     unsigned long remain=size; 
     void *code_page; 
     unsigned long cnt=0;
-    while (0) { /* TODO: replace this */
+    while (remain > 0) { /* TODO: replace this */
         code_page = allocate_user_page_mm(cur->mm, cnt/*va*/, MMU_PTE_FLAGS | MM_AP_RW);
         if (code_page == 0)	{ release(&cur->mm->lock); BUG(); return -1;} // XXX shall reverse mappings
         int n = MIN(remain,PAGE_SIZE); 
         memmove(code_page, (void *)(start+cnt), n);
         remain-=n; cnt+=PAGE_SIZE; 
     }
+    W("mapped %lu pages for code, size=%lu", cnt/PAGE_SIZE, size);
 	cur->mm->sz = cur->mm->codesz = size; // not page aligned    
 	
     // map fb to user VM, and pass its vaddr to the user process
@@ -797,7 +798,7 @@ int move_to_user_mode_donut(unsigned long start, unsigned long size, unsigned lo
         // mmap fb area to user VM    
         for (; fb_pa < fb_pa_end; fb_pa += PAGE_SIZE) {
             unsigned long * ret = map_page(cur->mm, 
-                0,0, /* TODO: replace this */
+                fb_pa, fb_pa, /* TODO: replace this */
                 1 /* alloc pgtable on demand*/, 
                 MMU_PTE_FLAGS | MM_AP_RW /* perm */); 
             BUG_ON(!ret);     
@@ -805,8 +806,8 @@ int move_to_user_mode_donut(unsigned long start, unsigned long size, unsigned lo
 
         // populate args for user_donut(), which span x0--x7
         // cf user_donut() for the args it expects
-        regs->regs[0] = 0; /* TODO: replace this */
-        regs->regs[1] = 0; /* TODO: replace this */
+        regs->regs[0] = (unsigned long)VA2PA(the_fb.fb); // fb user VA (identity mapped)
+        regs->regs[1] = the_fb.pitch;
     }
 
 	set_pgd(cur->mm->pgd);
@@ -860,8 +861,10 @@ int copy_process(unsigned long clone_flags, unsigned long fn, unsigned long arg,
         struct trapframe *cur_regs = task_pt_regs(cur);
         // copy over the parent's entire trapframe to the child
         /* TODO: your code here */
+        *childregs = *cur_regs;
         // set fork()'s return value for the child 
         /* TODO: your code here */
+        childregs->regs[0] = 0;
         if (clone_flags & PF_UTHREAD) {	// fork a "thread", i.e. child to share the parent's existing mm
             p->mm = cur->mm; BUG_ON(!p->mm);
             __atomic_add_fetch(&p->mm->ref, 1, __ATOMIC_SEQ_CST);

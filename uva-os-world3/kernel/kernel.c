@@ -39,7 +39,7 @@ void kernel_process() {
 	/* below: call "move_to_user_mode" to switch to user mode (with user code
 		start & size). this function maps two pages for user code only...only
 		good for simple tasks */ 
-	move_to_user_mode(begin, end-begin, (unsigned long)&user_process_hello - begin);
+	move_to_user_mode_donut(begin, end-begin, (unsigned long)&user_donut - begin);
 
 	/* alternatively, call "move_to_user_mode_donut". maps usr pages on demand. 
 		can launch: donut (kuser), nes0 (binary elf embedded). */

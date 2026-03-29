@@ -291,20 +291,24 @@ static void wakehandler(TKernelTimerHandle hTimer, void *param, void *context) {
 	cf: test_ktimer() for the use of ktimer() functions
 */
 #include "fb.h"
+static void sleep_wakeup_handler(TKernelTimerHandle hTimer, void *param, void *context) {
+    wakeup(param);
+}
 // Q4: user donut
 int sys_sleep(int ms) {
 	int t; 
 	unsigned long c0; 
 
 	/* TODO: your code here */
+  
 
 	if (ms==0) return 0; // shortcut it
 
 	acquire(&timerlock); 
 	c0 = current_counter();
 	t = ktimer_start_nolock(ms, 
-		0, /* TODO: replace this */
-		0/*para*/, 0/*context*/); 
+		sleep_wakeup_handler, /* TODO: replace this */
+		myproc()/*para*/, 0/*context*/); 
 	if (t<0) {release(&timerlock); BUG(); return -1;}
 	// we still hold timerlock, so timer irq hanler won't race w/ us
 	
@@ -314,7 +318,7 @@ int sys_sleep(int ms) {
             release(&timerlock);
             return -1;
 		}
-		sleep(0, 0); /* TODO: replace this */
+		sleep(myproc(), &timerlock); /* TODO: replace this */
 	}
 	release(&timerlock); 
 	return 0; 
